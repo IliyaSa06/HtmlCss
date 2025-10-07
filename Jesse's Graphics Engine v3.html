@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Graphics Engine</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #3c3c3c;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            font-size: 12px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-areas:
+                "menu menu menu menu"
+                "toolbar toolbar toolbar toolbar"
+                "outliner viewport viewport inspector"
+                "outliner timeline timeline inspector";
+            grid-template-columns: 280px 1fr 1fr 300px;
+            grid-template-rows: 24px 44px 1fr 140px;
+            height: 100vh;
+            background: #2e2e2e;
+        }
+
+        /* Menu System */
+        .menu-system {
+            grid-area: menu;
+            background: linear-gradient(to bottom, #5a5a5a, #4a4a4a);
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            padding: 0;
+        }
+
+        .menu-item {
+            padding: 4px 16px;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 11px;
+            border-right: 1px solid #3a3a3a;
+            transition: background 0.1s;
+        }
+
+        .menu-item:hover {
+            background: linear-gradient(to bottom, #6a6a6a, #5a5a5a);
+        }
+
+        /* Main Toolbar */
+        .main-toolbar {
+            grid-area: toolbar;
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            gap: 8px;
+        }
+
+        .tool-group {
+            display: flex;
+            background: #353535;
+            border: 1px solid #2a2a2a;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .tool-button {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            border: none;
+            border-right: 1px solid #2a2a2a;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.1s;
+        }
+
+        .tool-button:last-child {
+            border-right: none;
+        }
+
+        .tool-button:hover {
+            background: linear-gradient(to bottom, #5a5a5a, #4a4a4a);
+        }
+
+        .tool-button.active {
+            background: linear-gradient(to bottom, #ff8c00, #ff7700);
+            color: #ffffff;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* Panel System */
+        .panel {
+            background: #3c3c3c;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            color: #ffffff;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: auto;
+            background: #3c3c3c;
+        }
+
+        /* Outliner */
+        .outliner {
+            grid-area: outliner;
+        }
+
+        .outliner-content {
+            padding: 4px;
+        }
+
+        .outliner-item {
+            display: flex;
+            align-items: center;
+            padding: 2px 4px;
+            margin: 1px 0;
+            cursor: pointer;
+            font-size: 11px;
+            border-radius: 1px;
+        }
+
+        .outliner-item:hover {
+            background: #4a4a4a;
+        }
+
+        .outliner-item.selected {
+            background: linear-gradient(to bottom, #ff8c00, #ff7700);
+            color: #ffffff;
+        }
+
+        .outliner-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Viewport */
+        .viewport {
+            grid-area: viewport;
+            background: #2a2a2a;
+            border: 1px solid #1a1a1a;
+        }
+
+        .viewport-header {
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .viewport-title {
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .viewport-controls {
+            display: flex;
+            gap: 2px;
+        }
+
+        .viewport-btn {
+            background: #353535;
+            border: 1px solid #2a2a2a;
+            color: #cccccc;
+            padding: 2px 6px;
+            font-size: 9px;
+            cursor: pointer;
+            border-radius: 1px;
+        }
+
+        .viewport-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .viewport-btn.active {
+            background: #ff8c00;
+            color: #ffffff;
+        }
+
+        .viewport-3d {
+            height: calc(100% - 28px);
+            background:
+                    linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+                    linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+                    linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #323232;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .viewport-info {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.7);
+            color: #ff8c00;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid rgba(255,140,0,0.3);
+        }
+
+        .scene-object {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #666, #444);
+            border: 2px solid #ff8c00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: bold;
+            transform: perspective(200px) rotateX(15deg) rotateY(25deg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Inspector */
+        .inspector {
+            grid-area: inspector;
+        }
+
+        .inspector-content {
+            padding: 8px;
+        }
+
+        .property-section {
+            margin-bottom: 16px;
+            border: 1px solid #2a2a2a;
+            background: #353535;
+        }
+
+        .property-header {
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #ffffff;
+            border-bottom: 1px solid #2a2a2a;
+            cursor: pointer;
+        }
+
+        .property-content {
+            padding: 8px;
+        }
+
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .property-label {
+            width: 60px;
+            color: #cccccc;
+            font-size: 10px;
+        }
+
+        .property-field {
+            flex: 1;
+            background: #2a2a2a;
+            border: 1px solid #1a1a1a;
+            color: #ffffff;
+            padding: 2px 4px;
+            font-size: 10px;
+        }
+
+        .property-field:focus {
+            outline: none;
+            border-color: #ff8c00;
+            background: #333333;
+        }
+
+        /* Timeline */
+        .timeline {
+            grid-area: timeline;
+        }
+
+        .timeline-header {
+            background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .timeline-btn {
+            background: #353535;
+            border: 1px solid #2a2a2a;
+            color: #ffffff;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .timeline-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .timeline-content {
+            height: calc(100% - 28px);
+            background: #353535;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .timeline-ruler {
+            height: 20px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #1a1a1a;
+            position: relative;
+        }
+
+        .timeline-track {
+            height: 24px;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 10px;
+            color: #cccccc;
+            position: relative;
+        }
+
+        .keyframe {
+            width: 8px;
+            height: 8px;
+            background: #ff8c00;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            border-radius: 1px;
+        }
+
+        .keyframe:hover {
+            background: #ffaa00;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 10px;
+            color: #cccccc;
+            gap: 16px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border: 1px solid #3a3a3a;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a5a;
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: #2a2a2a;
+        }
+    </style>
+</head>
+<body>
+<div class="main-layout">
+    <!-- Menu System -->
+    <div class="menu-system">
+        <div class="menu-item">File</div>
+        <div class="menu-item">Edit</div>
+        <div class="menu-item">Create</div>
+        <div class="menu-item">Modify</div>
+        <div class="menu-item">Animation</div>
+        <div class="menu-item">Rendering</div>
+        <div class="menu-item">Customize</div>
+        <div class="menu-item">Help</div>
+    </div>
+
+    <!-- Main Toolbar -->
+    <div class="main-toolbar">
+        <div class="tool-group">
+            <button class="tool-button">📁</button>
+            <button class="tool-button">💾</button>
+            <button class="tool-button">📋</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="tool-button">↶</button>
+            <button class="tool-button">↷</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="tool-button active">🔍</button>
+            <button class="tool-button">✋</button>
+            <button class="tool-button">🔄</button>
+            <button class="tool-button">📏</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="tool-button">▶️</button>
+            <button class="tool-button">⏸️</button>
+            <button class="tool-button">⏹️</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="tool-button">🔲</button>
+            <button class="tool-button">🎨</button>
+            <button class="tool-button">🖼️</button>
+        </div>
+    </div>
+
+    <!-- Outliner -->
+    <div class="panel outliner">
+        <div class="panel-title">
+            Outliner
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="panel-content">
+            <div class="outliner-content">
+                <div class="outliner-item selected">
+                    <div class="outliner-icon">🌍</div>
+                    Scene
+                </div>
+                <div class="outliner-item" style="padding-left: 20px;">
+                    <div class="outliner-icon">💡</div>
+                    directionalLight1
+                </div>
+                <div class="outliner-item" style="padding-left: 20px;">
+                    <div class="outliner-icon">📷</div>
+                    persp
+                </div>
+                <div class="outliner-item" style="padding-left: 20px;">
+                    <div class="outliner-icon">📦</div>
+                    pCube1
+                </div>
+                <div class="outliner-item" style="padding-left: 20px;">
+                    <div class="outliner-icon">🔵</div>
+                    pSphere1
+                </div>
+                <div class="outliner-item" style="padding-left: 20px;">
+                    <div class="outliner-icon">🏠</div>
+                    environment
+                </div>
+                <div class="outliner-item" style="padding-left: 36px;">
+                    <div class="outliner-icon">🌳</div>
+                    trees_grp
+                </div>
+                <div class="outliner-item" style="padding-left: 36px;">
+                    <div class="outliner-icon">🏔️</div>
+                    terrain_mesh
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewport -->
+    <div class="panel viewport">
+        <div class="viewport-header">
+            <div class="viewport-title">Perspective</div>
+            <div class="viewport-controls">
+                <button class="viewport-btn active">Persp</button>
+                <button class="viewport-btn">Front</button>
+                <button class="viewport-btn">Side</button>
+                <button class="viewport-btn">Top</button>
+            </div>
+        </div>
+        <div class="viewport-3d">
+            <div class="viewport-info">
+                Perspective • Shaded • 60.0 fps
+            </div>
+            <div class="scene-object">
+                CUBE
+            </div>
+        </div>
+    </div>
+
+    <!-- Inspector -->
+    <div class="panel inspector">
+        <div class="panel-title">
+            Attribute Editor
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="panel-content">
+            <div class="inspector-content">
+                <div class="property-section">
+                    <div class="property-header">Transform Attributes</div>
+                    <div class="property-content">
+                        <div class="property-row">
+                            <span class="property-label">Translate X</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Translate Y</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Translate Z</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Rotate X</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Rotate Y</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Rotate Z</span>
+                            <input type="text" class="property-field" value="0.000">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="property-section">
+                    <div class="property-header">Shape Attributes</div>
+                    <div class="property-content">
+                        <div class="property-row">
+                            <span class="property-label">Width</span>
+                            <input type="text" class="property-field" value="1.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Height</span>
+                            <input type="text" class="property-field" value="1.000">
+                        </div>
+                        <div class="property-row">
+                            <span class="property-label">Depth</span>
+                            <input type="text" class="property-field" value="1.000">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="panel timeline">
+        <div class="timeline-header">
+            <div class="viewport-title">Time Slider</div>
+            <div class="timeline-controls">
+                <button class="timeline-btn">⏮️</button>
+                <button class="timeline-btn">▶️</button>
+                <button class="timeline-btn">⏭️</button>
+                <button class="timeline-btn">🔄</button>
+            </div>
+        </div>
+        <div class="timeline-content">
+            <div class="timeline-ruler"></div>
+            <div class="timeline-track">
+                pCube1.translateX
+                <div class="keyframe" style="left: 50px;"></div>
+                <div class="keyframe" style="left: 150px;"></div>
+                <div class="keyframe" style="left: 250px;"></div>
+            </div>
+            <div class="timeline-track">
+                pCube1.rotateY
+                <div class="keyframe" style="left: 100px;"></div>
+                <div class="keyframe" style="left: 200px;"></div>
+            </div>
+            <div class="timeline-track">
+                pCube1.scaleX
+                <div class="keyframe" style="left: 75px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <span>Ready</span>
+    <span>|</span>
+    <span>Frame: 1</span>
+    <span>|</span>
+    <span>Objects: 6</span>
+    <span>|</span>
+    <span>Verts: 8</span>
+    <span>|</span>
+    <span>Faces: 6</span>
+</div>
+
+<script>
+    // Outliner selection
+    document.querySelectorAll('.outliner-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.outliner-item').forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+            updateInspector(this.textContent.trim());
+        });
+    });
+
+    // Tool selection
+    document.querySelectorAll('.tool-button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const parent = this.parentElement;
+            if (parent.children.length > 1) {
+                Array.from(parent.children).forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+
+    // Viewport controls
+    document.querySelectorAll('.viewport-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.parentElement.querySelectorAll('.viewport-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelector('.viewport-title').textContent = this.textContent;
+        });
+    });
+
+    // Timeline keyframes
+    document.querySelectorAll('.keyframe').forEach(keyframe => {
+        keyframe.addEventListener('click', function() {
+            this.style.background = '#ffaa00';
+            setTimeout(() => {
+                this.style.background = '#ff8c00';
+            }, 200);
+        });
+    });
+
+    // Property sections
+    document.querySelectorAll('.property-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
+        });
+    });
+
+    function updateInspector(objectName) {
+        const fields = document.querySelectorAll('.property-field');
+        if (objectName.includes('pCube1')) {
+            fields[0].value = '2.000';
+            fields[1].value = '0.000';
+            fields[2].value = '0.000';
+        } else if (objectName.includes('pSphere1')) {
+            fields[0].value = '-1.500';
+            fields[1].value = '0.000';
+            fields[2].value = '1.000';
+        } else {
+            fields[0].value = '0.000';
+            fields[1].value = '0.000';
+            fields[2].value = '0.000';
+        }
+    }
+
+    // Animate viewport info
+    setInterval(() => {
+        const info = document.querySelector('.viewport-info');
+        const fps = (58 + Math.random() * 4).toFixed(1);
+        info.textContent = `Perspective • Shaded • ${fps} fps`;
+    }, 1000);
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98af9c9642e32c1f',t:'MTc1OTg2MzMxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
