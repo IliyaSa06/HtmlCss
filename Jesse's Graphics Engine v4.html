@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphics Engine Pro</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-areas:
+                "menu menu menu"
+                "toolbar toolbar toolbar"
+                "left-panel viewport right-panel"
+                "timeline timeline timeline";
+            grid-template-rows: 30px 40px 1fr 120px;
+            grid-template-columns: 250px 1fr 280px;
+            height: 100vh;
+            gap: 1px;
+            background: #0d0d0d;
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+            grid-area: menu;
+            background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .menu-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .menu-item:hover {
+            background: #404040;
+            color: #00d4ff;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            grid-area: toolbar;
+            background: linear-gradient(135deg, #2d2d2d, #242424);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 2px;
+            margin-right: 15px;
+        }
+
+        .tool-btn {
+            width: 32px;
+            height: 32px;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .tool-btn:hover {
+            background: #4a4a4a;
+            border-color: #00d4ff;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+        }
+
+        .tool-btn.active {
+            background: #00d4ff;
+            color: #000;
+            border-color: #00a8cc;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            grid-area: left-panel;
+            background: #252525;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #2f2f2f, #262626);
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .outliner {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        .outliner-item {
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 1px 0;
+        }
+
+        .outliner-item:hover {
+            background: #3a3a3a;
+        }
+
+        .outliner-item.selected {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .outliner-icon {
+            width: 16px;
+            height: 16px;
+            background: #666;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Viewport */
+        .viewport {
+            grid-area: viewport;
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .viewport-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(42, 42, 42, 0.9);
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .viewport-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .viewport-btn {
+            padding: 3px 8px;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .viewport-btn:hover {
+            background: #4a4a4a;
+            border-color: #00d4ff;
+        }
+
+        .viewport-content {
+            position: absolute;
+            top: 35px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, #2a2a2a 0%, #1a1a1a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 35px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                    linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
+        /* Right Panel */
+        .right-panel {
+            grid-area: right-panel;
+            background: #252525;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .properties {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        .property-group {
+            margin-bottom: 16px;
+        }
+
+        .property-group-header {
+            background: #2f2f2f;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .property-label {
+            width: 80px;
+            color: #ccc;
+            flex-shrink: 0;
+        }
+
+        .property-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 3px;
+            padding: 4px 6px;
+            color: #e0e0e0;
+            font-size: 12px;
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 4px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Timeline */
+        .timeline {
+            grid-area: timeline;
+            background: #2a2a2a;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-header {
+            background: linear-gradient(135deg, #2f2f2f, #262626);
+            padding: 6px 12px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .timeline-btn {
+            width: 24px;
+            height: 24px;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .timeline-btn:hover {
+            background: #4a4a4a;
+            border-color: #00d4ff;
+        }
+
+        .timeline-track {
+            flex: 1;
+            background: #1e1e1e;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .timeline-ruler {
+            height: 20px;
+            background: #333;
+            border-bottom: 1px solid #444;
+            position: relative;
+        }
+
+        .timeline-content {
+            height: 60px;
+            background: repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 19px,
+                    #333 19px,
+                    #333 20px
+            );
+            position: relative;
+        }
+
+        .keyframe {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #00d4ff;
+            border-radius: 50%;
+            top: 26px;
+            transform: translateX(-4px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .keyframe:hover {
+            background: #00a8cc;
+            transform: translateX(-4px) scale(1.2);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-item">File</div>
+        <div class="menu-item">Edit</div>
+        <div class="menu-item">Create</div>
+        <div class="menu-item">Modify</div>
+        <div class="menu-item">Display</div>
+        <div class="menu-item">Render</div>
+        <div class="menu-item">Window</div>
+        <div class="menu-item">Help</div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="tool-group">
+            <div class="tool-btn active">⚡</div>
+            <div class="tool-btn">🔄</div>
+            <div class="tool-btn">📐</div>
+            <div class="tool-btn">🎯</div>
+        </div>
+        <div class="tool-group">
+            <div class="tool-btn">📦</div>
+            <div class="tool-btn">🔵</div>
+            <div class="tool-btn">🔺</div>
+            <div class="tool-btn">💡</div>
+        </div>
+        <div class="tool-group">
+            <div class="tool-btn">📷</div>
+            <div class="tool-btn">🎬</div>
+            <div class="tool-btn">🎨</div>
+        </div>
+    </div>
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <div class="panel-header">Scene Outliner</div>
+        <div class="outliner">
+            <div class="outliner-item selected">
+                <div class="outliner-icon">🌍</div>
+                Scene
+            </div>
+            <div class="outliner-item">
+                <div class="outliner-icon">📦</div>
+                Cube.001
+            </div>
+            <div class="outliner-item">
+                <div class="outliner-icon">🔵</div>
+                Sphere.002
+            </div>
+            <div class="outliner-item">
+                <div class="outliner-icon">💡</div>
+                Light.001
+            </div>
+            <div class="outliner-item">
+                <div class="outliner-icon">📷</div>
+                Camera.001
+            </div>
+            <div class="outliner-item">
+                <div class="outliner-icon">🎨</div>
+                Material.001
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewport -->
+    <div class="viewport">
+        <div class="viewport-header">
+            <div>Perspective View</div>
+            <div class="viewport-controls">
+                <div class="viewport-btn">Wireframe</div>
+                <div class="viewport-btn">Solid</div>
+                <div class="viewport-btn">Rendered</div>
+            </div>
+        </div>
+        <div class="grid-overlay"></div>
+        <div class="viewport-content">
+            3D Viewport - Ready for Rendering
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+        <div class="panel-header">Properties</div>
+        <div class="properties">
+            <div class="property-group">
+                <div class="property-group-header">Transform</div>
+                <div class="property-row">
+                    <div class="property-label">Location X</div>
+                    <input type="number" class="property-input" value="0.000" step="0.001">
+                </div>
+                <div class="property-row">
+                    <div class="property-label">Location Y</div>
+                    <input type="number" class="property-input" value="0.000" step="0.001">
+                </div>
+                <div class="property-row">
+                    <div class="property-label">Location Z</div>
+                    <input type="number" class="property-input" value="0.000" step="0.001">
+                </div>
+            </div>
+
+            <div class="property-group">
+                <div class="property-group-header">Material</div>
+                <div class="property-row">
+                    <div class="property-label">Base Color</div>
+                    <input type="color" class="property-input" value="#808080">
+                </div>
+                <div class="property-row">
+                    <div class="property-label">Metallic</div>
+                    <input type="range" class="property-input" min="0" max="1" step="0.01" value="0.5">
+                </div>
+                <div class="property-row">
+                    <div class="property-label">Roughness</div>
+                    <input type="range" class="property-input" min="0" max="1" step="0.01" value="0.5">
+                </div>
+            </div>
+
+            <div class="property-group">
+                <div class="property-group-header">Lighting</div>
+                <div class="property-row">
+                    <div class="property-label">Intensity</div>
+                    <input type="number" class="property-input" value="1.000" step="0.1">
+                </div>
+                <div class="property-row">
+                    <div class="property-label">Color Temp</div>
+                    <input type="number" class="property-input" value="6500" step="100">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+        <div class="timeline-header">
+            <div>Timeline</div>
+            <div class="timeline-controls">
+                <div class="timeline-btn">⏮</div>
+                <div class="timeline-btn">⏸</div>
+                <div class="timeline-btn">▶</div>
+                <div class="timeline-btn">⏭</div>
+            </div>
+            <div>Frame: 1 / 250</div>
+        </div>
+        <div class="timeline-track">
+            <div class="timeline-ruler"></div>
+            <div class="timeline-content">
+                <div class="keyframe" style="left: 40px;"></div>
+                <div class="keyframe" style="left: 120px;"></div>
+                <div class="keyframe" style="left: 200px;"></div>
+                <div class="keyframe" style="left: 320px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tool selection
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Outliner selection
+    document.querySelectorAll('.outliner-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.outliner-item').forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
+    // Viewport mode switching
+    document.querySelectorAll('.viewport-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const mode = this.textContent;
+            const viewport = document.querySelector('.viewport-content');
+            viewport.textContent = `3D Viewport - ${mode} Mode`;
+        });
+    });
+
+    // Timeline playback
+    let isPlaying = false;
+    let currentFrame = 1;
+    const maxFrames = 250;
+
+    document.querySelectorAll('.timeline-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.textContent;
+            const frameDisplay = document.querySelector('.timeline-header').lastElementChild;
+
+            switch(action) {
+                case '⏮':
+                    currentFrame = 1;
+                    break;
+                case '⏸':
+                    isPlaying = false;
+                    break;
+                case '▶':
+                    isPlaying = !isPlaying;
+                    if (isPlaying) {
+                        playAnimation();
+                    }
+                    break;
+                case '⏭':
+                    currentFrame = maxFrames;
+                    break;
+            }
+
+            frameDisplay.textContent = `Frame: ${currentFrame} / ${maxFrames}`;
+        });
+    });
+
+    function playAnimation() {
+        if (isPlaying && currentFrame < maxFrames) {
+            currentFrame++;
+            document.querySelector('.timeline-header').lastElementChild.textContent = `Frame: ${currentFrame} / ${maxFrames}`;
+            setTimeout(playAnimation, 41.67); // ~24fps
+        } else {
+            isPlaying = false;
+        }
+    }
+
+    // Property updates
+    document.querySelectorAll('.property-input').forEach(input => {
+        input.addEventListener('input', function() {
+            // Simulate real-time property updates
+            console.log(`Property updated: ${this.value}`);
+        });
+    });
+
+    // Menu interactions
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            console.log(`Menu clicked: ${this.textContent}`);
+        });
+    });
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b02d48b766693d',t:'MTc1OTg2OTI0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
