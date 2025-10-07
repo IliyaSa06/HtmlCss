@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jesse's Graphics Engine</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            font-size: 13px;
+            overflow: hidden;
+            font-weight: 400;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-rows: 48px 1fr 28px;
+            height: 100vh;
+            backdrop-filter: blur(20px);
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 40px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+            margin-right: auto;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-tab.active {
+            background: rgba(79, 70, 229, 0.2);
+            color: #ffffff;
+        }
+
+        .nav-tab.active::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: #4f46e5;
+            border-radius: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-color: transparent;
+        }
+
+        .action-btn.primary:hover {
+            background: linear-gradient(135deg, #5b52e8, #8b5cf6);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: 1fr 240px;
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .panel {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        }
+
+        .panel-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-icon {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .panel-btn {
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .panel-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        /* Scene Hierarchy */
+        .hierarchy {
+            grid-row: 1 / 3;
+        }
+
+        .hierarchy-search {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .hierarchy-search:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tree-node:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tree-node.selected {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.3), rgba(124, 58, 237, 0.2));
+            border: 1px solid rgba(79, 70, 229, 0.5);
+        }
+
+        .tree-node.selected::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .tree-indent {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .tree-icon {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.1));
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+
+        .tree-label {
+            flex: 1;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tree-visibility {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tree-visibility:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Viewport */
+        .viewport {
+            background: rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .viewport-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                    radial-gradient(circle at 30% 30%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+                    linear-gradient(135deg, rgba(10, 10, 15, 0.9) 0%, rgba(26, 26, 46, 0.9) 100%);
+        }
+
+        .viewport-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .viewport-placeholder h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .viewport-toolbar {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .viewport-tool {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .viewport-tool:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .viewport-tool.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-color: transparent;
+            color: #ffffff;
+        }
+
+        .viewport-stats {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            gap: 16px;
+        }
+
+        .stat-value {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        /* Properties Panel */
+        .properties {
+            grid-row: 1 / 3;
+        }
+
+        .property-section {
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .section-toggle {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            transition: transform 0.2s ease;
+        }
+
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .property-group {
+            margin-bottom: 16px;
+        }
+
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+
+        .property-label {
+            flex: 1;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .property-input {
+            flex: 1.2;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .property-vector {
+            display: flex;
+            gap: 4px;
+            flex: 1.2;
+        }
+
+        .vector-input {
+            flex: 1;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .vector-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .vector-label {
+            position: absolute;
+            top: -6px;
+            left: 4px;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(10, 10, 15, 0.8);
+            padding: 0 4px;
+        }
+
+        .vector-component {
+            position: relative;
+            flex: 1;
+        }
+
+        .property-slider {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-input {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: right;
+            font-size: 11px;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .property-toggle {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(20px);
+        }
+
+        /* Asset Browser */
+        .asset-browser {
+            grid-column: 1 / 4;
+        }
+
+        .browser-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .browser-search {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        .browser-filter {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .asset-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .asset-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .asset-item.selected {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.1));
+            border-color: #4f46e5;
+        }
+
+        .asset-preview {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.3), rgba(124, 58, 237, 0.2));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 24px;
+        }
+
+        .asset-name {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .asset-type {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .status-item {
+            margin-right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .status-indicator.warning {
+            background: #f59e0b;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 280px 1fr 320px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+
+            .hierarchy, .properties {
+                grid-row: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🎮</div>
+            <div class="logo-text">Jesse's Graphic Engine</div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active">Scene</button>
+            <button class="nav-tab">Materials</button>
+            <button class="nav-tab">Lighting</button>
+            <button class="nav-tab">Animation</button>
+            <button class="nav-tab">Physics</button>
+            <button class="nav-tab">Audio</button>
+        </div>
+
+        <div class="header-actions">
+            <button class="action-btn">
+                <span>💾</span>
+                Save
+            </button>
+            <button class="action-btn">
+                <span>🔄</span>
+                Build
+            </button>
+            <button class="action-btn primary">
+                <span>▶️</span>
+                Play
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Scene Hierarchy -->
+        <div class="panel hierarchy">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-icon">🌳</div>
+                    Scene Hierarchy
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">⚙️</button>
+                    <button class="panel-btn">➕</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <input type="text" class="hierarchy-search" placeholder="Search objects...">
+
+                <div class="tree-node selected">
+                    <div class="tree-indent">📁</div>
+                    <div class="tree-icon">🌍</div>
+                    <div class="tree-label">Scene Root</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 24px;">
+                    <div class="tree-indent">📁</div>
+                    <div class="tree-icon">💡</div>
+                    <div class="tree-label">Lighting</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">☀️</div>
+                    <div class="tree-label">Directional Light</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🌙</div>
+                    <div class="tree-label">Sky Light</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 24px;">
+                    <div class="tree-indent">📁</div>
+                    <div class="tree-icon">🏗️</div>
+                    <div class="tree-label">Environment</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🏔️</div>
+                    <div class="tree-label">Terrain</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🌊</div>
+                    <div class="tree-label">Water Plane</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 24px;">
+                    <div class="tree-indent">📁</div>
+                    <div class="tree-icon">🎭</div>
+                    <div class="tree-label">Actors</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">📦</div>
+                    <div class="tree-label">Player Character</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🏠</div>
+                    <div class="tree-label">Building_01</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🌳</div>
+                    <div class="tree-label">Tree_Pine_Large</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 24px;">
+                    <div class="tree-indent">📁</div>
+                    <div class="tree-icon">🎵</div>
+                    <div class="tree-label">Audio</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+
+                <div class="tree-node" style="padding-left: 48px;">
+                    <div class="tree-indent">📄</div>
+                    <div class="tree-icon">🔊</div>
+                    <div class="tree-label">Ambient_Forest</div>
+                    <div class="tree-visibility">👁️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Viewport -->
+        <div class="panel viewport">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-icon">🎥</div>
+                    Viewport
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">⚙️</button>
+                    <button class="panel-btn">📷</button>
+                    <button class="panel-btn">🔍</button>
+                </div>
+            </div>
+            <div class="viewport-content">
+                <div class="viewport-placeholder">
+                    <h3>3D Viewport</h3>
+                    <p>Real-time rendering viewport</p>
+                    <p style="font-size: 11px; opacity: 0.6; margin-top: 12px;">
+                        WASD + Mouse to navigate • Shift to speed up • Alt + Mouse to orbit
+                    </p>
+                </div>
+
+                <div class="viewport-toolbar">
+                    <button class="viewport-tool active" title="Select">🔍</button>
+                    <button class="viewport-tool" title="Move">↔️</button>
+                    <button class="viewport-tool" title="Rotate">🔄</button>
+                    <button class="viewport-tool" title="Scale">📏</button>
+                    <button class="viewport-tool" title="Universal">🎯</button>
+                </div>
+
+                <div class="viewport-stats">
+                    <div class="stat-row">
+                        <span>FPS:</span>
+                        <span class="stat-value" id="fps">60</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Frame Time:</span>
+                        <span class="stat-value" id="frameTime">16.7ms</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Triangles:</span>
+                        <span class="stat-value" id="triangles">2.4M</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Draw Calls:</span>
+                        <span class="stat-value" id="drawCalls">156</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>GPU Memory:</span>
+                        <span class="stat-value" id="gpuMemory">3.2GB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="panel properties">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-icon">⚙️</div>
+                    Properties
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">🔍</button>
+                    <button class="panel-btn">📋</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="property-section">
+                    <div class="section-header">
+                        <div class="section-title">Transform</div>
+                        <div class="section-toggle">▼</div>
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-row">
+                            <div class="property-label">Position</div>
+                            <div class="property-vector">
+                                <div class="vector-component">
+                                    <div class="vector-label">X</div>
+                                    <input type="number" class="vector-input" value="0.0" step="0.1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Y</div>
+                                    <input type="number" class="vector-input" value="0.0" step="0.1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Z</div>
+                                    <input type="number" class="vector-input" value="0.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Rotation</div>
+                            <div class="property-vector">
+                                <div class="vector-component">
+                                    <div class="vector-label">X</div>
+                                    <input type="number" class="vector-input" value="0.0" step="1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Y</div>
+                                    <input type="number" class="vector-input" value="0.0" step="1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Z</div>
+                                    <input type="number" class="vector-input" value="0.0" step="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Scale</div>
+                            <div class="property-vector">
+                                <div class="vector-component">
+                                    <div class="vector-label">X</div>
+                                    <input type="number" class="vector-input" value="1.0" step="0.1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Y</div>
+                                    <input type="number" class="vector-input" value="1.0" step="0.1">
+                                </div>
+                                <div class="vector-component">
+                                    <div class="vector-label">Z</div>
+                                    <input type="number" class="vector-input" value="1.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="property-section">
+                    <div class="section-header">
+                        <div class="section-title">Rendering</div>
+                        <div class="section-toggle">▼</div>
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-row">
+                            <div class="property-label">Visible</div>
+                            <div class="property-toggle">
+                                <div class="toggle-switch active">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Cast Shadows</div>
+                            <div class="property-toggle">
+                                <div class="toggle-switch active">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Receive Shadows</div>
+                            <div class="property-toggle">
+                                <div class="toggle-switch active">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">LOD Bias</div>
+                            <div class="property-slider">
+                                <input type="range" class="slider-input" min="0" max="5" value="0" step="1">
+                                <div class="slider-value">0</div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Render Priority</div>
+                            <div class="property-slider">
+                                <input type="range" class="slider-input" min="0" max="100" value="50" step="1">
+                                <div class="slider-value">50</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="property-section">
+                    <div class="section-header">
+                        <div class="section-title">Materials</div>
+                        <div class="section-toggle">▼</div>
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-row">
+                            <div class="property-label">Material Slot 0</div>
+                            <select class="property-input">
+                                <option>M_DefaultLit</option>
+                                <option>M_Metal_Brushed</option>
+                                <option>M_Glass_Clear</option>
+                                <option>M_Concrete_Rough</option>
+                            </select>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Override Material</div>
+                            <select class="property-input">
+                                <option>None</option>
+                                <option>M_Debug_Wireframe</option>
+                                <option>M_Debug_Normals</option>
+                                <option>M_Debug_UV</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="property-section">
+                    <div class="section-header">
+                        <div class="section-title">Physics</div>
+                        <div class="section-toggle">▼</div>
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-row">
+                            <div class="property-label">Simulate Physics</div>
+                            <div class="property-toggle">
+                                <div class="toggle-switch">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Mass (kg)</div>
+                            <input type="number" class="property-input" value="1.0" step="0.1">
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Linear Damping</div>
+                            <div class="property-slider">
+                                <input type="range" class="slider-input" min="0" max="10" value="0.1" step="0.1">
+                                <div class="slider-value">0.1</div>
+                            </div>
+                        </div>
+
+                        <div class="property-row">
+                            <div class="property-label">Angular Damping</div>
+                            <div class="property-slider">
+                                <input type="range" class="slider-input" min="0" max="10" value="0.1" step="0.1">
+                                <div class="slider-value">0.1</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Browser -->
+        <div class="panel asset-browser">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-icon">📁</div>
+                    Asset Browser
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">⚙️</button>
+                    <button class="panel-btn">📥</button>
+                </div>
+            </div>
+            <div class="browser-toolbar">
+                <input type="text" class="browser-search" placeholder="Search assets...">
+                <button class="browser-filter">All</button>
+                <button class="browser-filter">Meshes</button>
+                <button class="browser-filter">Materials</button>
+                <button class="browser-filter">Textures</button>
+                <button class="browser-filter">Audio</button>
+            </div>
+            <div class="panel-content" style="padding: 0;">
+                <div class="asset-grid">
+                    <div class="asset-item selected">
+                        <div class="asset-preview">📦</div>
+                        <div class="asset-name">SM_Cube</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">⚪</div>
+                        <div class="asset-name">SM_Sphere</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🔺</div>
+                        <div class="asset-name">SM_Cylinder</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🎨</div>
+                        <div class="asset-name">M_DefaultLit</div>
+                        <div class="asset-type">Material</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🖼️</div>
+                        <div class="asset-name">T_Brick_D</div>
+                        <div class="asset-type">Texture 2D</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🔊</div>
+                        <div class="asset-name">A_Footstep</div>
+                        <div class="asset-type">Sound Wave</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">💨</div>
+                        <div class="asset-name">P_Fire</div>
+                        <div class="asset-type">Particle System</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">📜</div>
+                        <div class="asset-name">BP_Character</div>
+                        <div class="asset-type">Blueprint</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🏠</div>
+                        <div class="asset-name">SM_House_01</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🌳</div>
+                        <div class="asset-name">SM_Tree_Pine</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">🪨</div>
+                        <div class="asset-name">SM_Rock_01</div>
+                        <div class="asset-type">Static Mesh</div>
+                    </div>
+                    <div class="asset-item">
+                        <div class="asset-preview">💡</div>
+                        <div class="asset-name">BP_PointLight</div>
+                        <div class="asset-type">Blueprint</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-indicator"></div>
+            Engine Ready
+        </div>
+        <div class="status-item">Build: Success</div>
+        <div class="status-item">Shaders: 1,247 compiled</div>
+        <div class="status-item">Memory: 4.2GB / 16GB</div>
+        <div class="status-item">GPU: RTX 4080 (85%)</div>
+        <div class="status-item">Project: ForestScene.nxs</div>
+    </div>
+</div>
+
+<script>
+    // Tree node selection
+    document.querySelectorAll('.tree-node').forEach(node => {
+        node.addEventListener('click', function() {
+            document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
+    // Asset item selection
+    document.querySelectorAll('.asset-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.asset-item').forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
+    // Viewport tool selection
+    document.querySelectorAll('.viewport-tool').forEach(tool => {
+        tool.addEventListener('click', function() {
+            document.querySelectorAll('.viewport-tool').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Toggle switches
+    document.querySelectorAll('.toggle-switch').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+    });
+
+    // Section collapse/expand
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const toggle = this.querySelector('.section-toggle');
+            const section = this.parentElement;
+            const content = section.querySelector('.property-group');
+
+            toggle.classList.toggle('collapsed');
+            if (content) {
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+
+    // Slider value updates
+    document.querySelectorAll('.slider-input').forEach(slider => {
+        slider.addEventListener('input', function() {
+            const valueDisplay = this.parentElement.querySelector('.slider-value');
+            if (valueDisplay) {
+                valueDisplay.textContent = this.value;
+            }
+        });
+    });
+
+    // Tab switching
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Real-time stats simulation
+    function updateStats() {
+        const fps = Math.floor(Math.random() * 10) + 55;
+        const frameTime = (1000 / fps).toFixed(1);
+        const triangles = (Math.random() * 0.8 + 2.0).toFixed(1);
+        const drawCalls = Math.floor(Math.random() * 50) + 130;
+        const gpuMemory = (Math.random() * 0.6 + 3.0).toFixed(1);
+
+        document.getElementById('fps').textContent = fps;
+        document.getElementById('frameTime').textContent = frameTime + 'ms';
+        document.getElementById('triangles').textContent = triangles + 'M';
+        document.getElementById('drawCalls').textContent = drawCalls;
+        document.getElementById('gpuMemory').textContent = gpuMemory + 'GB';
+    }
+
+    // Update stats every second
+    setInterval(updateStats, 1000);
+
+    // Visibility toggle functionality
+    document.querySelectorAll('.tree-visibility').forEach(visibility => {
+        visibility.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.textContent = this.textContent === '👁️' ? '🙈' : '👁️';
+        });
+    });
+
+    // Search functionality
+    document.querySelectorAll('input[placeholder*="Search"]').forEach(search => {
+        search.addEventListener('input', function() {
+            // Simulate search functionality
+            console.log('Searching for:', this.value);
+        });
+    });
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98aee9b2a2a12c1f',t:'MTc1OTg1NTk4Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

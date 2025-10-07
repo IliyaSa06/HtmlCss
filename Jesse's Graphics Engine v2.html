@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphics Engine UI</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-areas:
+                "toolbar toolbar toolbar"
+                "hierarchy viewport properties"
+                "assets viewport properties";
+            grid-template-columns: 250px 1fr 300px;
+            grid-template-rows: 40px 1fr 200px;
+            height: 100vh;
+            gap: 1px;
+            background: #0d0d0d;
+        }
+
+        .toolbar {
+            grid-area: toolbar;
+            background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 24px;
+        }
+
+        .toolbar-btn {
+            background: transparent;
+            border: 1px solid #404040;
+            color: #e0e0e0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: #404040;
+            border-color: #555;
+        }
+
+        .toolbar-btn.active {
+            background: #0078d4;
+            border-color: #106ebe;
+        }
+
+        .panel {
+            background: #252525;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #2d2d2d, #242424);
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            font-weight: 600;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .hierarchy {
+            grid-area: hierarchy;
+        }
+
+        .viewport {
+            grid-area: viewport;
+            background: #1a1a1a;
+        }
+
+        .viewport-content {
+            height: 100%;
+            background: linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+            linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+            linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .viewport-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #ccc;
+        }
+
+        .properties {
+            grid-area: properties;
+        }
+
+        .assets {
+            grid-area: assets;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin: 1px 0;
+            font-size: 13px;
+            transition: background 0.15s ease;
+        }
+
+        .tree-item:hover {
+            background: #333;
+        }
+
+        .tree-item.selected {
+            background: #0078d4;
+            color: white;
+        }
+
+        .tree-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            opacity: 0.7;
+        }
+
+        .property-group {
+            margin-bottom: 16px;
+        }
+
+        .property-group-header {
+            background: #2a2a2a;
+            padding: 6px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            border-left: 3px solid #0078d4;
+        }
+
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .property-label {
+            width: 80px;
+            color: #ccc;
+            font-size: 11px;
+        }
+
+        .property-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            color: #e0e0e0;
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+
+        .asset-item {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .asset-item:hover {
+            background: #333;
+            border-color: #555;
+        }
+
+        .asset-icon {
+            width: 32px;
+            height: 32px;
+            margin: 0 auto 4px;
+            background: #404040;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .asset-name {
+            font-size: 10px;
+            color: #ccc;
+            word-break: break-word;
+        }
+
+        .panel-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .panel-control-btn {
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 2px;
+            font-size: 12px;
+        }
+
+        .panel-control-btn:hover {
+            color: #e0e0e0;
+            background: #404040;
+        }
+
+        .viewport-3d {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, #333 2px, transparent 2px);
+            border: 2px solid #0078d4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0078d4;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 24px;
+            background: #1f1f1f;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            color: #999;
+            gap: 16px;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-section">
+            <button class="toolbar-btn">📁</button>
+            <button class="toolbar-btn">💾</button>
+            <button class="toolbar-btn">📋</button>
+        </div>
+        <div class="toolbar-section">
+            <button class="toolbar-btn active">▶️</button>
+            <button class="toolbar-btn">⏸️</button>
+            <button class="toolbar-btn">⏹️</button>
+        </div>
+        <div class="toolbar-section">
+            <button class="toolbar-btn">🔧</button>
+            <button class="toolbar-btn">🎯</button>
+            <button class="toolbar-btn">📐</button>
+        </div>
+    </div>
+
+    <!-- Scene Hierarchy -->
+    <div class="panel hierarchy">
+        <div class="panel-header">
+            Scene Hierarchy
+            <div class="panel-controls">
+                <button class="panel-control-btn">+</button>
+                <button class="panel-control-btn">⚙️</button>
+            </div>
+        </div>
+        <div class="panel-content scrollbar">
+            <div class="tree-item selected">
+                <span class="tree-icon">🌍</span>
+                Main Scene
+            </div>
+            <div class="tree-item" style="padding-left: 24px;">
+                <span class="tree-icon">💡</span>
+                Directional Light
+            </div>
+            <div class="tree-item" style="padding-left: 24px;">
+                <span class="tree-icon">📷</span>
+                Main Camera
+            </div>
+            <div class="tree-item" style="padding-left: 24px;">
+                <span class="tree-icon">📦</span>
+                Cube
+            </div>
+            <div class="tree-item" style="padding-left: 24px;">
+                <span class="tree-icon">🔵</span>
+                Sphere
+            </div>
+            <div class="tree-item" style="padding-left: 24px;">
+                <span class="tree-icon">🏠</span>
+                Environment
+            </div>
+            <div class="tree-item" style="padding-left: 40px;">
+                <span class="tree-icon">🌳</span>
+                Trees
+            </div>
+            <div class="tree-item" style="padding-left: 40px;">
+                <span class="tree-icon">🏔️</span>
+                Terrain
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewport -->
+    <div class="panel viewport">
+        <div class="panel-header">
+            Viewport
+            <div class="panel-controls">
+                <button class="panel-control-btn">🔍</button>
+                <button class="panel-control-btn">⚙️</button>
+            </div>
+        </div>
+        <div class="viewport-content">
+            <div class="viewport-overlay">
+                Perspective • Lit • 60 FPS
+            </div>
+            <div class="viewport-3d">
+                3D Scene View
+            </div>
+        </div>
+    </div>
+
+    <!-- Properties Panel -->
+    <div class="panel properties">
+        <div class="panel-header">
+            Properties
+            <div class="panel-controls">
+                <button class="panel-control-btn">🔒</button>
+                <button class="panel-control-btn">⚙️</button>
+            </div>
+        </div>
+        <div class="panel-content scrollbar">
+            <div class="property-group">
+                <div class="property-group-header">Transform</div>
+                <div class="property-row">
+                    <span class="property-label">Position</span>
+                    <input type="text" class="property-input" value="0, 0, 0">
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Rotation</span>
+                    <input type="text" class="property-input" value="0, 0, 0">
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Scale</span>
+                    <input type="text" class="property-input" value="1, 1, 1">
+                </div>
+            </div>
+
+            <div class="property-group">
+                <div class="property-group-header">Rendering</div>
+                <div class="property-row">
+                    <span class="property-label">Material</span>
+                    <input type="text" class="property-input" value="Default">
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Cast Shadows</span>
+                    <input type="checkbox" checked style="margin-left: auto;">
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Visible</span>
+                    <input type="checkbox" checked style="margin-left: auto;">
+                </div>
+            </div>
+
+            <div class="property-group">
+                <div class="property-group-header">Physics</div>
+                <div class="property-row">
+                    <span class="property-label">Mass</span>
+                    <input type="text" class="property-input" value="1.0">
+                </div>
+                <div class="property-row">
+                    <span class="property-label">Friction</span>
+                    <input type="text" class="property-input" value="0.5">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets Panel -->
+    <div class="panel assets">
+        <div class="panel-header">
+            Assets
+            <div class="panel-controls">
+                <button class="panel-control-btn">📁</button>
+                <button class="panel-control-btn">🔍</button>
+            </div>
+        </div>
+        <div class="panel-content scrollbar">
+            <div class="asset-grid">
+                <div class="asset-item">
+                    <div class="asset-icon">🎨</div>
+                    <div class="asset-name">Material_01</div>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-icon">🖼️</div>
+                    <div class="asset-name">Texture_Diffuse</div>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-icon">📦</div>
+                    <div class="asset-name">Cube_Mesh</div>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-icon">🔊</div>
+                    <div class="asset-name">Audio_Clip</div>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-icon">📜</div>
+                    <div class="asset-name">Script_Player</div>
+                </div>
+                <div class="asset-item">
+                    <div class="asset-icon">🎬</div>
+                    <div class="asset-name">Animation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <span>Ready</span>
+    <span>•</span>
+    <span>Objects: 6</span>
+    <span>•</span>
+    <span>Triangles: 2,048</span>
+    <span>•</span>
+    <span>Memory: 128 MB</span>
+</div>
+
+<script>
+    // Scene hierarchy interaction
+    document.querySelectorAll('.tree-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+
+            // Update properties panel based on selection
+            updatePropertiesPanel(this.textContent.trim());
+        });
+    });
+
+    // Asset interaction
+    document.querySelectorAll('.asset-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
+
+    // Toolbar button interaction
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.textContent === '▶️' || this.textContent === '⏸️' || this.textContent === '⏹️') {
+                document.querySelectorAll('.toolbar-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+
+    function updatePropertiesPanel(objectName) {
+        // Simulate updating properties based on selected object
+        const transformInputs = document.querySelectorAll('.property-input');
+
+        if (objectName.includes('Camera')) {
+            transformInputs[0].value = '0, 5, -10';
+            transformInputs[1].value = '15, 0, 0';
+        } else if (objectName.includes('Light')) {
+            transformInputs[0].value = '0, 10, 0';
+            transformInputs[1].value = '45, -30, 0';
+        } else if (objectName.includes('Cube')) {
+            transformInputs[0].value = '2, 0, 0';
+            transformInputs[1].value = '0, 45, 0';
+        } else {
+            transformInputs[0].value = '0, 0, 0';
+            transformInputs[1].value = '0, 0, 0';
+        }
+    }
+
+    // Simulate viewport updates
+    let frameCount = 0;
+    setInterval(() => {
+        frameCount++;
+        const overlay = document.querySelector('.viewport-overlay');
+        const fps = 58 + Math.floor(Math.random() * 4);
+        overlay.textContent = `Perspective • Lit • ${fps} FPS`;
+    }, 1000);
+
+    // Property input validation and updates
+    document.querySelectorAll('.property-input').forEach(input => {
+        input.addEventListener('change', function() {
+            this.style.borderColor = '#0078d4';
+            setTimeout(() => {
+                this.style.borderColor = '#404040';
+            }, 500);
+        });
+    });
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98af519dd66a1997',t:'MTc1OTg2MDI0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
